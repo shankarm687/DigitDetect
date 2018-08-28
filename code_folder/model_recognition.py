@@ -1,6 +1,7 @@
 #Test tensorflow and numpy
 
 import tensorflow as tf
+import pickle
 
 mnist = tf.keras.datasets.mnist
 
@@ -22,3 +23,7 @@ model.fit(x_train, y_train, epochs=1)
 model.evaluate(x_test, y_test)
 
 #model.predict()
+# Pickle the object (better compression than json)
+output = open('model.pkl', 'wb')
+pickle.dump(model, output)
+output.close()
