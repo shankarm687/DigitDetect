@@ -2,11 +2,21 @@
 
 import tensorflow as tf
 import pickle
+from tensorflow.keras.models import save_model, load_model
+#from matplotlib import pyplot as plt
+import cv2
 
 mnist = tf.keras.datasets.mnist
 
 (x_train, y_train),(x_test, y_test) = mnist.load_data()
 x_train, x_test = x_train / 255.0, x_test / 255.0
+
+
+images = x_test[0:10]
+
+
+#plt.imshow(images[0].reshape(28, 28), cmap=plt.cm.binary)
+#plt.show()
 
 model = tf.keras.models.Sequential([
   tf.keras.layers.Flatten(),
@@ -19,15 +29,19 @@ model.compile(optimizer='adam',
               metrics=['accuracy'])
 
 #TODO : Make this 5
-model.fit(x_train, y_train, epochs=1)
+model.fit(x_train, y_train, epochs=5)
 
 #Save:
-tf.keras.models.save_model(model, 'digit_model.h5')
+save_model(model, 'digit_model.h5')
 del model # delete
 
-rebuilt_model = tf.keras.models.load_model('digit_model.h5')
-rebuilt_model.evaluate(x_test, y_test)
+digit_model = load_model('digit_model.h5')
+#digit_model.evaluate(x_test, y_test)
 
+
+
+output_digits = digit_model.predict(images)
+print output_digits
 #model.predict()
 
 # Notes:
