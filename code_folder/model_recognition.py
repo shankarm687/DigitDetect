@@ -20,10 +20,16 @@ model.compile(optimizer='adam',
 
 #TODO : Make this 5
 model.fit(x_train, y_train, epochs=1)
-model.evaluate(x_test, y_test)
+
+#Save:
+tf.keras.models.save_model(model, 'digit_model.h5')
+del model # delete
+
+rebuilt_model = tf.keras.models.load_model('digit_model.h5')
+rebuilt_model.evaluate(x_test, y_test)
 
 #model.predict()
-# Pickle the object (better compression than json)
-output = open('model.pkl', 'wb')
-pickle.dump(model, output)
-output.close()
+
+# Notes:
+# 1. Installed packages : virtualenv, tensorflow, h5py (for saving models)
+
