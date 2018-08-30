@@ -39,7 +39,7 @@ print  input_image.shape
 
 
 #TODO Step 4: Resize image to 28x28 (But checkout what size of the image is actually used.)  normalized to fit in a 20x20 pixel box 
-# Before predicting, normalize pixels between 0 and 1
+# Before predicting, normalize pixels between 0 and 1 . References : http://yann.lecun.com/exdb/mnist/
 #TODO Step 5 
 
 output_array = digit_model.predict(images, NUM_IMAGES)

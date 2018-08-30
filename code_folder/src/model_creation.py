@@ -45,3 +45,4 @@ if __name__ == "__main__":
 # Notes:
 # 1. Installed packages : virtualenv, tensorflow, h5py (for saving models)
 # 2. Add pylint; Google python style guide to enforce patterns.
+# 3. Add References : http://yann.lecun.com/exdb/mnist/
