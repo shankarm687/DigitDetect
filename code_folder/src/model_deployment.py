@@ -87,9 +87,12 @@ for each_tuple in list_start_end_tuples:
     crop_img= input_image[:, each_tuple[0]:each_tuple[1]]
     start_row,end_row = cut_and_resize(crop_img)
     final_crop = crop_img[start_row:end_row, :]
-    crop_imgs.append(final_crop)
+    final_crop_resized = []
+    final_crop_resized =cv2.resize(final_crop,(20,20))
+    border_crop = cv2.copyMakeBorder(final_crop_resized, 4,4,4,4, borderType=cv2.BORDER_CONSTANT)
+    crop_imgs.append(border_crop)
     #Test
-    cv2.imwrite('image_'+str(idx)+'+.png',crop_imgs[idx])
+    cv2.imwrite('image2_'+str(idx)+'+.png',crop_imgs[idx])
     print crop_imgs[idx].shape # Max is around 34
     idx+=1
 
