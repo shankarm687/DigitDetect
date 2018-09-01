@@ -13,7 +13,7 @@ def create_model():
     # Load Data
     mnist = tf.keras.datasets.mnist
     (x_train, y_train),(x_test, y_test) = mnist.load_data()
-
+    # Normalize pixel grayscale to be between 0 and 1:
     x_train, x_test = x_train / 255.0, x_test / 255.0
 
     model = tf.keras.models.Sequential([

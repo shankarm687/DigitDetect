@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from tensorflow.keras.models import load_model
 import tensorflow as tf
 from utils.numpy_helpers import interpret_output_array
@@ -5,32 +7,10 @@ from utils.constants import MODEL_FILENAME, THRESHOLD_GRAYSCALE, INPUT_IMAGE_FIL
 import numpy as np
 import cv2
 
-#TODO Add Validation when loading model
-digit_model = load_model(MODEL_FILENAME)
-
-#STeps : 1. Read digit_input; 2. Figure out size in pixels of image in pixels 3. Cut image into digit blocks
-# 4. Resize number blocks to 28x28 5. Use the model.predict funtion below (NUM_IMAGES = Number of digit-blocks)
-
-input_image = cv2.imread(INPUT_IMAGE_FILENAME, cv2.IMREAD_GRAYSCALE)
-ROW_SIZE,COL_SIZE = input_image.shape
-#Outputs were 66 x 480  (Height pixels vs Width) 
-
-# Assumptions for the algorithm to work:
-# 1. Images can be assumed to be white on black background. Else use OpenCV operations:
-# Usual operations are convert to Grayscale; Increase constrast; Contouring to thicken the digit pixels. 
-# 2. The input image has digits on a single line otherwise, the algorithm will change.
-# 3. There is a border of black pixels both on all 4 sides of the image (This is a stronger stament of 1)
-# References : http://yann.lecun.com/exdb/mnist/
-
-# Algorithm to partition image into digit images:
-# Step 1. Find a list of start and end column indices for each digit detected
-# Step 2. Size of list represents the number of digits detected
-# Step 3. Use the tuple indices to extract detected digits into their own images.
-# Step 4. Crop the top and bottom, using grayscale thresholds.
-# Step 5. Resize cropped digit into 20x20 grid, and add border to create 28x28 image
-
+# Detect start(left) and end(right) indices for each digit in multi-digit image :
 def find_list_of_start_end_column_indices(multiple_digits_image):
-    list_start_end_tuples =[]
+    _, COL_SIZE = multiple_digits_image.shape
+    list_start_end_tuples = []
     # If any of the pixels in a column is white (feature/digit), then mark the column as white
     white_pixel_cols = np.amax(multiple_digits_image, axis=0)
 
@@ -49,8 +29,9 @@ def find_list_of_start_end_column_indices(multiple_digits_image):
             list_start_end_tuples.append((start_idx, end_idx))
     return list_start_end_tuples
 
-# Cut off top and bottom for each digit:
+# Find top and bottom indices for each digit image:
 def find_top_and_bottom(digit_image):
+    ROW_SIZE, _ = digit_image.shape
     #Remove Top and bottom:
     white_pixel_rows = np.amax(digit_image, axis=1)
     top = np.argmax(white_pixel_rows>THRESHOLD_GRAYSCALE)
@@ -73,6 +54,19 @@ def resize_to_mnist_image(cropped_digit_img):
     resized_digit_image = cv2.resize(cropped_digit_img,(20,20))
     return cv2.copyMakeBorder(resized_digit_image, 4,4,4,4, borderType=cv2.BORDER_CONSTANT)
 
+# Assumptions for the algorithm to work:
+# 1. Images can be assumed to be white on black background. Else use OpenCV operations:
+# Usual operations are convert to Grayscale; Increase constrast; Contouring to thicken the digit pixels. 
+# 2. The input image has digits on a single line otherwise, the algorithm will change.
+# 3. There is a border of black pixels both on all 4 sides of the image (This is a stronger stament of 1)
+# References : http://yann.lecun.com/exdb/mnist/
+
+# Algorithm to partition image into digit images:
+# Step 1. Find a list of start and end column indices for each digit detected
+# Step 2. Size of list represents the number of digits detected
+# Step 3. Use the tuple indices to extract detected digits into their own images.
+# Step 4. Crop the top and bottom, using grayscale thresholds.
+# Step 5. Resize cropped digit into 20x20 grid, and add border to create 28x28 image
 def segment_input_image_into_digit_images(multiple_digits_image):
     list_start_end_tuples = find_list_of_start_end_column_indices(multiple_digits_image)
     digit_images=[]
@@ -87,22 +81,27 @@ def segment_input_image_into_digit_images(multiple_digits_image):
         num_digit_images+=1
     return num_digit_images, digit_images
 
-    #Test
-    #cv2.imwrite('image_'+str(idx)+'+.png',out_img)
-
 def stack_2d_arrays(list_of_images):
     y=np.dstack(list_of_images)
-    # To get the shape to be Nx10x10, you could  use rollaxis:
-    y=np.rollaxis(y,-1)
-    print(y.shape)
+    y=np.rollaxis(y,-1) # To get the shape to be Nx28x28 instead of 28x28xN
     return y
 
-num_digit_images, digit_images = segment_input_image_into_digit_images(input_image)
-#Convert list of images into 3D np array (10x28*28)
-np_digit_images = stack_2d_arrays(digit_images)
-# Before predicting, normalize pixels between 0 and 1 . 
-np_digit_images = np_digit_images / 255.0
-print np_digit_images
-output_array = digit_model.predict(np_digit_images, num_digit_images)
-print interpret_output_array(output_array, num_digit_images)
+def run_digit_recognition():
+    input_image = cv2.imread(INPUT_IMAGE_FILENAME, cv2.IMREAD_GRAYSCALE)
+    num_digit_images, digit_images = segment_input_image_into_digit_images(input_image)
+    #Convert list of images into 3D np array (Nx28*28)
+    np_digit_images = stack_2d_arrays(digit_images)
+    # Before predicting, normalize pixels between 0 and 1 . 
+    np_digit_images = np_digit_images / 255.0
 
+    digit_model = load_model(MODEL_FILENAME) #TODO Add Validation when loading model
+    output_array = digit_model.predict(np_digit_images, num_digit_images)
+    return interpret_output_array(output_array, num_digit_images)
+
+def lambda_handler(event, context):
+    out_array = run_digit_recognition()
+    print(out_array)
+
+if __name__ == "__main__":
+    out_array = run_digit_recognition()
+    print(out_array)
